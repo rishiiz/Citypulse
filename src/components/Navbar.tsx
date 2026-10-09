@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Persona, PersonaType } from '../types';
+import { Persona } from '../types';
 import { PERSONAS } from '../services/scoringEngine';
 import { Language, TRANSLATIONS } from '../data/translations';
 import { 
-  ShieldAlert, Globe, User, PhoneCall, Sparkles, 
-  ChevronDown, Type, Contrast, Play 
+  Globe, PhoneCall, Sparkles, ChevronDown, Type, Contrast, 
+  Play, Home, LogOut 
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -23,6 +23,9 @@ interface NavbarProps {
   onTriggerDemoFlowC: () => void;
   activeTab: string;
   onChangeTab: (tab: string) => void;
+  user: { name: string; email: string; avatar: string } | null;
+  onOpenLanding: () => void;
+  onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -40,7 +43,10 @@ export const Navbar: React.FC<NavbarProps> = ({
   onTriggerDemoFlowB,
   onTriggerDemoFlowC,
   activeTab,
-  onChangeTab
+  onChangeTab,
+  user,
+  onOpenLanding,
+  onLogout
 }) => {
   const [showPersonaMenu, setShowPersonaMenu] = useState<boolean>(false);
   const t = TRANSLATIONS[language];
@@ -68,7 +74,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             title="Open Live Chaos Index Dashboard"
           >
             <span className="pulsing-amber-dot"></span>
-            <span className="chaos-label">Chaos Index:</span>
+            <span className="chaos-label">Chaos:</span>
             <span className="chaos-number">{chaosScore}/100 ↗</span>
           </button>
 
@@ -120,6 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right Settings & Persona Controls */}
         <div className="navbar-actions-col">
+
           {/* Persona Switcher Dropdown */}
           <div className="persona-dropdown-container">
             <button
@@ -195,6 +202,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </div>
 
+          {/* User Profile or Landing button */}
+          {user ? (
+            <div className="nav-user-chip" title={`Signed in as ${user.email}`}>
+              <img src={user.avatar} alt={user.name} className="nav-user-img" />
+              <span className="nav-user-name">{user.name.split(' ')[0]}</span>
+              <button className="nav-logout-btn" onClick={onLogout} title="Log out">
+                <LogOut size={12} />
+              </button>
+            </div>
+          ) : (
+            <button className="nav-landing-link-btn" onClick={onOpenLanding} title="Landing Page">
+              <Home size={14} /> <span>Home</span>
+            </button>
+          )}
+
           {/* Quick SOS button */}
           <button className="nav-sos-btn" onClick={onOpenSOS}>
             <PhoneCall size={14} /> SOS
@@ -214,6 +236,9 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
           <button className="demo-strip-btn flow-c" onClick={onTriggerDemoFlowC}>
             <Play size={12} /> Flow C: "Compare Areas" (5-Axis Radar + Verdict)
+          </button>
+          <button className="demo-strip-btn landing-btn-chip" onClick={onOpenLanding}>
+            <Home size={12} /> View Landing & Auth
           </button>
         </div>
       </div>

@@ -53,9 +53,9 @@ export const MapComponent: React.FC<MapComponentProps> = ({
       zoomControl: false
     });
 
-    // Sleek Dark CartoDB Voyager / Positron tiles for high-tech aesthetic
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    // Clean, crisp OpenStreetMap tiles without any API key watermark
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       maxZoom: 19
     }).addTo(map);
 
@@ -83,46 +83,50 @@ export const MapComponent: React.FC<MapComponentProps> = ({
     }
   }, [selectedPlace, selectedIncident]);
 
-  // Render Places
+  // Render Places (compact, elegant pins that don't overlap)
   useEffect(() => {
     if (!markersLayerRef.current) return;
     markersLayerRef.current.clearLayers();
 
-    places.forEach((place) => {
+    // Show top 35 places to keep map clean and legible
+    const displayPlaces = places.slice(0, 35);
+
+    displayPlaces.forEach((place) => {
       const isSelected = selectedPlace?.id === place.id;
       const pulseScore = Math.round(
         (place.subScores.safety + place.subScores.cleanliness + place.subScores.affordability + place.subScores.ratings + place.subScores.accessibility) / 5
       );
 
-      const color = pulseScore >= 80 ? '#10b981' : pulseScore >= 65 ? '#f59e0b' : '#ef4444';
+      const color = pulseScore >= 85 ? '#10b981' : pulseScore >= 70 ? '#0284c7' : '#f59e0b';
 
       const customIcon = L.divIcon({
         className: 'custom-map-pin',
         html: `
           <div style="
-            background: ${isSelected ? '#0f172a' : 'white'};
-            color: ${isSelected ? '#38bdf8' : '#0f172a'};
+            background: ${isSelected ? '#0f172a' : '#ffffff'};
+            color: ${isSelected ? '#38bdf8' : '#1e293b'};
             border: 2px solid ${color};
             border-radius: 9999px;
             padding: 3px 8px;
             font-size: 11px;
             font-weight: 700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.22);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 5px;
             white-space: nowrap;
-            transform: ${isSelected ? 'scale(1.2)' : 'scale(1)'};
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: ${isSelected ? 'scale(1.18)' : 'scale(1)'};
+            transition: all 0.2s ease;
             cursor: pointer;
+            z-index: ${isSelected ? 1000 : 1};
           ">
-            <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:${color};"></span>
-            <span>${place.name.slice(0, 14)}</span>
-            <span style="font-size:9px; background:${color}22; color:${color}; padding:1px 4px; border-radius:4px;">${pulseScore}</span>
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${color};"></span>
+            <span>${place.name.slice(0, 16)}</span>
+            <span style="font-size:10px; background:${color}18; color:${color}; padding:1px 5px; border-radius:4px; font-weight:800;">${pulseScore}</span>
           </div>
         `,
-        iconSize: [80, 26],
-        iconAnchor: [40, 13]
+        iconSize: [90, 24],
+        iconAnchor: [45, 12]
       });
 
       const marker = L.marker(place.coordinates, { icon: customIcon });

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Place, Incident, Persona, PersonaType } from './types';
+import React, { useState, useEffect } from 'react';
+import { Place, Incident, Persona } from './types';
 import { SEED_PLACES } from './data/seedPlaces';
 import { INITIAL_INCIDENTS } from './data/seedIncidents';
 import { PERSONAS, calculateChaosIndex } from './services/scoringEngine';
@@ -17,8 +17,12 @@ import { HeritageLayer } from './components/HeritageLayer';
 import { PulseDashboard } from './components/PulseDashboard';
 import { CitizenReportingModal } from './components/CitizenReportingModal';
 import { SOSModal } from './components/SOSModal';
+import { LandingPage } from './components/LandingPage';
 
 export function App() {
+  const [currentView, setCurrentView] = useState<'app' | 'landing'>('app');
+  const [user, setUser] = useState<{ name: string; email: string; avatar: string } | null>(null);
+
   const [places, setPlaces] = useState<Place[]>(SEED_PLACES);
   const [incidents, setIncidents] = useState<Incident[]>(INITIAL_INCIDENTS);
   const [currentPersona, setCurrentPersona] = useState<Persona>(PERSONAS.riya);
@@ -34,6 +38,36 @@ export function App() {
   const [isLargeText, setIsLargeText] = useState<boolean>(false);
   const [isHighContrast, setIsHighContrast] = useState<boolean>(false);
   const [autoTriggerDemoFlowB, setAutoTriggerDemoFlowB] = useState<boolean>(false);
+
+  // Load saved user from localStorage
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('citypulse_auth_user');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+  const handleLoginSuccess = (userData: { name: string; email: string; avatar: string }) => {
+    setUser(userData);
+    try {
+      localStorage.setItem('citypulse_auth_user', JSON.stringify(userData));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    try {
+      localStorage.removeItem('citypulse_auth_user');
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Check if waterlogging incident exists in incidents list
   const hasWaterloggingIncident = incidents.some(
@@ -52,27 +86,38 @@ export function App() {
   // Handler for adding a new incident from 10s reporting flow
   const handleNewIncidentAdded = (newIncident: Incident) => {
     setIncidents([newIncident, ...incidents]);
-    // Also select it on the heatmap and switch to heatmap view
     setSelectedIncident(newIncident);
   };
 
   // Demo Flow Triggers per PRD Section 12
   const handleTriggerDemoFlowA = () => {
-    // Flow A — "Plan my evening" (shows F2 + F3 + F5 + F7)
+    setCurrentView('app');
     setCurrentPersona(PERSONAS.riya);
     setActiveTab('ask');
   };
 
   const handleTriggerDemoFlowB = () => {
-    // Flow B — "Report in 10 seconds" (shows F8 + F4)
+    setCurrentView('app');
     setAutoTriggerDemoFlowB(true);
     setIsReportModalOpen(true);
   };
 
   const handleTriggerDemoFlowC = () => {
-    // Flow C — "Which area is better?" (shows F6)
+    setCurrentView('app');
     setActiveTab('compare');
   };
+
+  if (currentView === 'landing') {
+    return (
+      <div className={`app-container ${isLargeText ? 'large-text-mode' : ''} ${isHighContrast ? 'high-contrast-mode' : ''}`}>
+        <LandingPage
+          onEnterApp={() => setCurrentView('app')}
+          user={user}
+          onLoginSuccess={handleLoginSuccess}
+        />
+      </div>
+    );
+  }
 
   return (
     <div
@@ -97,6 +142,9 @@ export function App() {
         onTriggerDemoFlowC={handleTriggerDemoFlowC}
         activeTab={activeTab}
         onChangeTab={(tab) => setActiveTab(tab)}
+        user={user}
+        onOpenLanding={() => setCurrentView('landing')}
+        onLogout={handleLogout}
       />
 
       {/* Main Content Area */}

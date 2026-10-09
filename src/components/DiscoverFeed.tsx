@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Place, CategoryType, BudgetTier, Persona } from '../types';
 import { calculatePulseScore, getScoreTheme } from '../services/scoringEngine';
+import { fetchGeminiPlaceInsights } from '../services/geminiService';
 import { MapComponent } from './MapComponent';
 import { 
   Search, Filter, ShieldCheck, Sparkles, IndianRupee, Star, 
@@ -29,6 +30,13 @@ export const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
   const [filterAccessibility, setFilterAccessibility] = useState<boolean>(false);
   const [filterWomenSafe, setFilterWomenSafe] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'split' | 'list' | 'map'>('split');
+  const [geminiLoading, setGeminiLoading] = useState<boolean>(false);
+  const [geminiInsights, setGeminiInsights] = useState<{
+    aiSummary: string;
+    safetyAdvisory: string;
+    bestTime: string;
+    localTip: string;
+  } | null>(null);
 
   const categories: { id: CategoryType; label: string; icon: string }[] = [
     { id: 'all', label: 'All Places', icon: '📍' },
@@ -358,6 +366,49 @@ export const DiscoverFeed: React.FC<DiscoverFeedProps> = ({
                     <strong>🕒 Telemetry Freshness:</strong> <span>{selectedPlace.evidenceNotes.lastUpdated}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Gemini AI Live Location Analysis */}
+              <div className="gemini-location-box">
+                <div className="gemini-box-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Sparkles size={16} color="#38bdf8" />
+                    <strong>Google Gemini Location Intelligence</strong>
+                  </div>
+                  <button
+                    className="fetch-gemini-btn"
+                    disabled={geminiLoading}
+                    onClick={async () => {
+                      setGeminiLoading(true);
+                      const res = await fetchGeminiPlaceInsights(selectedPlace.name, selectedPlace.category, 'Pune');
+                      setGeminiInsights(res);
+                      setGeminiLoading(false);
+                    }}
+                  >
+                    {geminiLoading ? 'Querying Gemini...' : 'Fetch Live Gemini Insights'}
+                  </button>
+                </div>
+
+                {geminiInsights && (
+                  <div className="gemini-insights-results">
+                    <div className="g-item">
+                      <span className="g-lbl">🤖 AI Summary:</span>
+                      <p>{geminiInsights.aiSummary}</p>
+                    </div>
+                    <div className="g-item">
+                      <span className="g-lbl">🛡️ Safety Advisory:</span>
+                      <p>{geminiInsights.safetyAdvisory}</p>
+                    </div>
+                    <div className="g-item">
+                      <span className="g-lbl">🕒 Best Visiting Time:</span>
+                      <p>{geminiInsights.bestTime}</p>
+                    </div>
+                    <div className="g-item">
+                      <span className="g-lbl">💡 Local Tip:</span>
+                      <p>{geminiInsights.localTip}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Action buttons */}
